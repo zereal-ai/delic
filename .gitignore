@@ -1,0 +1,12 @@
+# ENV
+.env
+
+# Tooling
+.calva/
+.nrepl-port
+
+# Language serving and linting
+.clj-kondo/
+!.clj-kondo/config.edn
+.cpcache/
+.lsp/

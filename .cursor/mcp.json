@@ -1,0 +1,11 @@
+{
+    "mcpServers": {
+        "clojure-mcp": {
+            "command": "sh",
+            "args": [
+                "-c",
+                "$WORKSPACE_FOLDER_PATHS/.cursor/mcp/clojure-mcp.sh"
+            ]
+        }
+    }
+}
