@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "24"
+
+      - name: Install Clojure Tools
+        uses: DeLaGuardo/setup-clojure@12.3
+        with:
+          bb: latest
+          cli: latest
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.gitlibs
+            ~/.deps.clj
+            ~/.clojure
+            ~/.cpcache
+          key: ${{ runner.os }}-deps-${{ hashFiles('deps.edn') }}
+          restore-keys: |
+            ${{ runner.os }}-deps-
+
+      - name: Run Tests
+        run: |
+          cd $GITHUB_WORKSPACE
+          clojure -M:test
+
+      - name: Run Linter
+        continue-on-error: true
+        run: |
+          cd $GITHUB_WORKSPACE
+          clojure -M:lint
+
+  release:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "24"
+
+      - name: Install Clojure Tools
+        uses: DeLaGuardo/setup-clojure@12.3
+        with:
+          bb: latest
+          cli: latest
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.gitlibs
+            ~/.deps.clj
+            ~/.clojure
+            ~/.cpcache
+          key: ${{ runner.os }}-deps-${{ hashFiles('deps.edn') }}
+          restore-keys: |
+            ${{ runner.os }}-deps-
+
+      - name: Set version from tag
+        run: echo "DSPY_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Build uberjar
+        run: |
+          cd $GITHUB_WORKSPACE
+          clojure -T:build uber
+
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "target/*-standalone.jar"
+          generateReleaseNotes: true
+          draft: false
+          prerelease: false

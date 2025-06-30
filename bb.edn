@@ -1,0 +1,114 @@
+{:tasks
+ {;; Development REPL with Portal and CIDER middleware
+  repl {:doc "Start development REPL with Portal and CIDER middleware"
+        :override-builtin true
+        :task (shell "clj -M:dev -m nrepl.cmdline --interactive --middleware '[cider.nrepl/cider-middleware]'")}
+
+  ;; Static analysis with clj-kondo
+  lint {:doc "Run clj-kondo static analysis"
+        :task (shell "clj -M:lint")}
+
+  ;; Comprehensive diagnostics with clojure-lsp
+  diagnose {:doc "Run comprehensive diagnostics with clojure-lsp"
+            :task (do
+                    (println "🔬 Running clojure-lsp diagnostics...")
+                    (println "=====================================")
+                    (let [result (shell {:continue true} "clojure-lsp diagnostics")]
+                      (if (= 0 (:exit result))
+                        (println "✅ No diagnostics issues found")
+                        (println "⚠️  Diagnostics completed with findings"))
+                      (println)
+                      (println "💡 Tip: Remove .lsp/.cache directory if you encounter issues")))}
+
+  ;; Test suite with Kaocha
+  test {:doc "Run test suite with Kaocha"
+        :task (shell "clj -M:test")}
+
+  ;; Build standalone uberjar
+  uber {:doc "Build standalone uberjar"
+        :task (shell "clj -T:build uber")}
+
+  ;; Clean build artifacts
+  clean {:doc "Clean build artifacts"
+         :task (shell "clj -T:build clean")}
+
+  ;; CI pipeline: lint + test
+  ci {:doc "Run CI checks (lint + test)"
+      :task (do
+              (println "🏗️ Running CI Pipeline...")
+              (println "========================")
+              (print "🔍 Running lint... ")
+              (let [lint-result (shell {:continue true} "clj -M:lint")]
+                (if (= 0 (:exit lint-result))
+                  (println "✅ No issues found")
+                  (println "⚠️  Warnings found (continuing)")))
+              (println)
+              (print "🧪 Running tests... ")
+              (let [test-result (shell "clj -M:test")]
+                (println "✅ Tests completed"))
+              (println)
+              (println "🎉 CI Pipeline completed successfully!"))}
+
+  ;; Enhanced CI pipeline with diagnostics
+  ci-full {:doc "Run full CI checks (lint + diagnose + test)"
+           :task (do
+                   (println "🏗️ Running Full CI Pipeline...")
+                   (println "==============================")
+                   (print "🔍 Running lint... ")
+                   (let [lint-result (shell {:continue true} "clj -M:lint")]
+                     (if (= 0 (:exit lint-result))
+                       (println "✅ No issues found")
+                       (println "⚠️  Warnings found (continuing)")))
+                   (println)
+                   (print "🔬 Running diagnostics... ")
+                   (let [diag-result (shell {:continue true} "clojure-lsp diagnostics")]
+                     (if (= 0 (:exit diag-result))
+                       (println "✅ No issues found")
+                       (println "⚠️  Diagnostics found (continuing)")))
+                   (println)
+                   (print "🧪 Running tests... ")
+                   (let [test-result (shell "clj -M:test")]
+                     (println "✅ Tests completed"))
+                   (println)
+                   (println "🎉 Full CI Pipeline completed successfully!"))}
+
+  ;; Enhanced help with better formatting
+  help {:doc "Show available tasks"
+        :override-builtin true
+        :task (do
+                (println "🚀 desic - Available Babashka Tasks")
+                (println "========================================")
+                (println "📖  help  - Show this help message")
+                (println "🔄  repl  - Start development REPL with Portal and CIDER")
+                (println "🔍  lint  - Run clj-kondo static analysis")
+                (println "🔬  diagnose - Run comprehensive diagnostics with clojure-lsp")
+                (println "🧪  test  - Run test suite with Kaocha")
+                (println "📦  uber  - Build standalone uberjar")
+                (println "🧹  clean - Clean build artifacts")
+                (println "🏗️   ci    - Run CI checks (lint + test)")
+                (println "🔬  ci-full - Run full CI checks (lint + diagnose + test)")
+                (println)
+                (println "Usage: bb <task-name>")
+                (println "Example: bb test"))}
+
+  ;; Quick status check
+  status {:doc "Show project status"
+          :task (do
+                  (println "📊 desic Project Status")
+                  (println "======================")
+                  (print "📁 Directory: ")
+                  (println (System/getProperty "user.dir"))
+                  (print "📋 Dependencies: ")
+                  (println (if (.exists (java.io.File. "deps.edn")) "✅ deps.edn found" "❌ deps.edn missing"))
+                  (print "🔧 Build config: ")
+                  (println (if (.exists (java.io.File. "build.clj")) "✅ build.clj found" "❌ build.clj missing"))
+                  (print "🧪 Test status: ")
+                  (println (if (.exists (java.io.File. "tests.edn")) "✅ tests.edn found" "❌ tests.edn missing")))}
+
+  ;; Watch mode for tests (bonus feature)
+  test-watch {:doc "Run tests in watch mode"
+              :task (shell "clj -M:test --watch")}
+
+  ;; REPL with just Portal (lighter weight)
+  repl-simple {:doc "Start simple REPL with Portal only"
+               :task (shell "clj -M:dev")}}}

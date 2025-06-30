@@ -10,3 +10,6 @@
 !.clj-kondo/config.edn
 .cpcache/
 .lsp/
+
+# Deployment
+target/
