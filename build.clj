@@ -1,6 +1,7 @@
 (ns build
-  (:require [clojure.tools.build.api :as b]
-            [clojure.string :as str]))
+  (:require
+   [clojure.tools.build.api :as b])
+  (:refer-clojure :exclude [test]))
 
 (def lib 'desic/dspy-clj)
 (def version (or (System/getenv "DSPY_VERSION")
@@ -10,10 +11,10 @@
 (def uber-file (format "target/%s-%s-standalone.jar"
                        (name lib) version))
 
-(defn clean [_]
+(defn ^:export clean [_]
   (b/delete {:path "target"}))
 
-(defn uber [_]
+(defn ^:export uber [_]
   (clean nil)
   (b/copy-dir {:src-dirs ["src" "resources"] :target-dir class-dir})
   ;; Skip compilation for now due to Malli schema serialization issues
@@ -24,13 +25,13 @@
            :main      'dspy.cli})
   (println "Built" uber-file))
 
-(defn test [_]
+(defn ^:export test [_]
   (b/process {:command-args ["clojure" "-M:test"]}))
 
-(defn lint [_]
+(defn ^:export lint [_]
   (b/process {:command-args ["clojure" "-M:lint"]}))
 
-(defn ci [_]
+(defn ^:export ci [_]
   (lint nil)
   (test nil)
   (uber nil))
