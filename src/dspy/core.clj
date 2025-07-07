@@ -1,8 +1,8 @@
 (ns dspy.core
-  "Public façade for the desic library.")
+  "Public façade for the delic library.")
 
 (defn version
-  "Returns the current version of desic"
+  "Returns the current version of delic"
   []
   "0.1.0-SNAPSHOT")
 

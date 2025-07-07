@@ -3,7 +3,7 @@
    [clojure.tools.build.api :as b])
   (:refer-clojure :exclude [test]))
 
-(def lib 'desic/dspy-clj)
+(def lib 'delic/dspy-clj)
 (def version (or (System/getenv "DSPY_VERSION")
                  (format "SNAPSHOT.%s" (b/git-count-revs nil))))
 (def class-dir "target/classes")

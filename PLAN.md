@@ -1,4 +1,4 @@
-# desic - Clojure's take on DSPy
+# delic - Clojure's take on DSPy
 
 > **Purpose** – This file is the *complete*, self-contained engineering blueprint for a pure-Clojure rewrite of DSPy.
 > Reading only this document, a dev can scaffold, code, test, package, and ship the project from an empty Git repo.

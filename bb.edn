@@ -76,7 +76,7 @@
   help {:doc "Show available tasks"
         :override-builtin true
         :task (do
-                (println "🚀 desic - Available Babashka Tasks")
+                (println "🚀 delic - Available Babashka Tasks")
                 (println "========================================")
                 (println "📖  help  - Show this help message")
                 (println "🔄  repl  - Start development REPL with Portal and CIDER")
@@ -94,7 +94,7 @@
   ;; Quick status check
   status {:doc "Show project status"
           :task (do
-                  (println "📊 desic Project Status")
+                  (println "📊 delic Project Status")
                   (println "======================")
                   (print "📁 Directory: ")
                   (println (System/getProperty "user.dir"))

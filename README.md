@@ -1,26 +1,28 @@
-# desic
-**Declarative Self-Improving Clojure**
+# delic
+**D**eclarative S**el**f-**I**mproving **C**lojure
+
+Pronounced: _delish_
 
 > **A pure-Clojure implementation of DSPy** — systematic optimization for LLM pipelines without the prompt engineering chaos.
 
-[![CI](https://github.com/zereal-ai/desic/workflows/CI/badge.svg)](https://github.com/zereal-ai/desic/actions)
+[![CI](https://github.com/zereal-ai/delic/workflows/CI/badge.svg)](https://github.com/zereal-ai/delic/actions)
 
 ⚠️ **Alpha Stage**: This project is in active development and not yet production-ready.
 
-## What is desic?
+## What is delic?
 
-**desic** (Declarative Self-Improving Clojure) brings DSPy's revolutionary approach to Clojure: **programming**—not prompting—language models. Instead of manually crafting fragile prompt strings, you write declarative code that gets automatically optimized for reliability and performance.
+**delic** (Declarative Self-Improving Clojure) brings DSPy's revolutionary approach to Clojure: **programming**—not prompting—language models. Instead of manually crafting fragile prompt strings, you write declarative code that gets automatically optimized for reliability and performance.
 
-## Why desic?
+## Why delic?
 
 ### **Systematic Optimization**
-Stop guessing at prompts. desic's optimizers automatically tune your LLM parameters using beam search, few-shot learning, and metric-driven compilation—often producing better results than hand-crafted prompts.
+Stop guessing at prompts. delic's optimizers automatically tune your LLM parameters using beam search, few-shot learning, and metric-driven compilation—often producing better results than hand-crafted prompts.
 
 ### **Provider-Agnostic Architecture**
 Write your code once, run it with any LLM provider. Clean separation between abstract interfaces and concrete provider implementations means adding new LLM services requires zero changes to your application code.
 
 ### **Separation of Concerns**
-Write your pipeline logic once. Let desic handle the LLM parameters (prompts, examples, weights) separately, so changes to models or data don't break your entire system.
+Write your pipeline logic once. Let delic handle the LLM parameters (prompts, examples, weights) separately, so changes to models or data don't break your entire system.
 
 ### **Built for Concurrency**
 Native async support with **Manifold** enables efficient parallel LLM calls with automatic rate limiting, retries, and backpressure—essential for production workloads.

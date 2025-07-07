@@ -1,4 +1,4 @@
-# System Patterns: desic
+# System Patterns: delic
 
 ## Architecture Overview
 
@@ -452,7 +452,7 @@ Storage Protocol → Backend Implementations → Integration → Configuration
 
 ## Summary
 
-The desic system follows **protocol-first, async-first, schema-driven** design principles with:
+The delic system follows **protocol-first, async-first, schema-driven** design principles with:
 
 - **Clean abstractions** through protocols and factory patterns
 - **Composable components** that work together seamlessly

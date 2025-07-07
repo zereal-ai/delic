@@ -1,5 +1,5 @@
 (ns dspy.cli
-  "Command-line interface for desic (dspy-clj)."
+  "Command-line interface for delic (dspy-clj)."
   (:require
    [clojure.edn :as edn]
    [clojure.java.io :as io]
@@ -20,9 +20,9 @@
    ["-h" "--help" "Show this help message"]])
 
 (defn usage [options-summary]
-  (->> ["desic - Clojure DSPy: Systematic LLM Pipeline Optimization"
+  (->> ["delic - Clojure DSPy: Systematic LLM Pipeline Optimization"
         ""
-        "Usage: desic [options] <command> [args]"
+        "Usage: delic [options] <command> [args]"
         ""
         "Commands:"
         "  compile <pipeline-file>    Compile EDN pipeline to executable form"
@@ -33,11 +33,11 @@
         options-summary
         ""
         "Examples:"
-        "  desic compile pipeline.edn"
-        "  desic optimize pipeline.edn trainset.edn exact-match"
-        "  desic --config prod.edn optimize pipeline.edn trainset.edn semantic-similarity"
+        "  delic compile pipeline.edn"
+        "  delic optimize pipeline.edn trainset.edn exact-match"
+        "  delic --config prod.edn optimize pipeline.edn trainset.edn semantic-similarity"
         ""
-        "For more information, see: https://github.com/your-org/desic"]
+        "For more information, see: https://github.com/your-org/delic"]
        (str/join \newline)))
 
 (defn error-msg [errors]
@@ -174,7 +174,7 @@
 (defn version-command
   "Handle the version command."
   [_options]
-  (println "desic version" (core/version))
+  (println "delic version" (core/version))
   (println "Clojure version" (clojure-version))
   (println "Java version" (System/getProperty "java.version")))
 

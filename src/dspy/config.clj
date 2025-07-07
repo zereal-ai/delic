@@ -1,5 +1,5 @@
 (ns dspy.config
-  "Configuration management for desic with multiple sources and validation."
+  "Configuration management for delic with multiple sources and validation."
   (:require
    [clojure.edn :as edn]
    [clojure.java.io :as io]

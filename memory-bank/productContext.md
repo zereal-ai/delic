@@ -1,6 +1,6 @@
-# Product Context: desic
+# Product Context: delic
 
-## Why desic Exists
+## Why delic Exists
 
 ### The Problem
 DSPy revolutionized LLM application development by replacing manual prompt engineering with systematic optimization. However, existing DSPy implementations are Python-only, creating integration challenges for JVM-based applications and requiring complex polyglot deployments.
@@ -9,7 +9,7 @@ DSPy revolutionized LLM application development by replacing manual prompt engin
 Clojure's functional programming paradigm, immutable data structures, and powerful concurrency primitives make it an ideal language for reliable LLM pipelines. Yet no native Clojure implementation of DSPy's core concepts exists.
 
 ### The Solution
-desic brings DSPy's systematic approach to Clojure, providing:
+delic brings DSPy's systematic approach to Clojure, providing:
 - **Programming over Prompting**: Write declarative code instead of crafting brittle prompt strings
 - **Automatic Optimization**: Let algorithms find better parameters than manual tuning
 - **JVM Native**: No Python interop, clean deployment, leverage existing JVM infrastructure
@@ -27,7 +27,7 @@ desic brings DSPy's systematic approach to Clojure, providing:
       retrieve-relevant-docs
       (generate-answer :sig QA)))
 
-;; 3. Let desic optimize it (automation)
+;; 3. Let delic optimize it (automation)
 (def optimized-pipeline
   (optimize rag-pipeline training-data exact-match))
 

@@ -1,7 +1,7 @@
-# Project Brief: desic
+# Project Brief: delic
 
 ## Project Name
-**desic** - Declarative Self-Improving Clojure
+**delic** - Declarative Self-Improving Clojure
 
 ## Core Purpose
 A pure-Clojure implementation of DSPy that brings systematic optimization for LLM pipelines to the JVM ecosystem, eliminating the need for Python interop and manual prompt engineering.

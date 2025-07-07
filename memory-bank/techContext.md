@@ -1,4 +1,4 @@
-# Tech Context: desic
+# Tech Context: delic
 
 ## Technology Stack
 
