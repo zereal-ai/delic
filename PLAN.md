@@ -63,67 +63,155 @@ Secrets are injected via environment variables (e.g. `OPENAI_API_KEY`).
 
 ---
 
-## ✅ COMPLETED MILESTONES (1-6) - PRODUCTION READY
+## ✅ COMPLETED MILESTONES (1, 2, 4, 5, 6)
 
-### ✅ Milestone 1: Core DSL (100% COMPLETE)
-- **✅ defsignature macro**: Declarative input/output specifications
-- **✅ ILlmModule protocol**: Complete async module abstraction
-- **✅ Pipeline composer**: DAG-based pipeline engine with all patterns
-- **✅ Test coverage**: 30 tests, 105 assertions, 0 failures
+**The core foundation of `delic` is stable and many key features are implemented. However, some items in the original plan were marked complete prematurely. This revised plan reflects the true, verified state of the project.**
 
-### ✅ Milestone 2: LLM Backend Integration (100% COMPLETE)
-- **✅ ILlmBackend protocol**: Complete async backend abstraction
-- **✅ OpenAI backend**: Professional library integration with openai-clojure
-- **✅ Backend registry**: Dynamic loading via multimethod
-- **✅ Middleware stack**: Throttle, retry, timeout, logging, circuit breaker
-- **✅ Test coverage**: 16 tests covering all backend functionality
+### ✅ Milestone 1: Core DSL
+- **Status**: **Implemented**.
+- **Evidence**: `dspy.signature/defsignature`, `dspy.module/ILlmModule`, and `dspy.pipeline` provide the foundational DSL for building programs.
 
-### ✅ Milestone 3: Optimizer Engine (100% COMPLETE)
-- **✅ Optimization API**: Complete framework with schema validation
-- **✅ Beam search strategy**: Production optimization implementation
-- **✅ Concurrent evaluation**: Rate-limited parallel assessment
-- **✅ Built-in metrics**: Exact matching and semantic similarity
-- **✅ Test coverage**: 14 tests covering optimization functionality
+### ✅ Milestone 2: LLM Backend Integration
+- **Status**: **Partial**. The core protocol is complete, but only one provider is implemented.
+- **Evidence**: `dspy.backend.protocol/ILlmBackend` exists, along with a robust `openai` provider. Wrappers for resilience are in `dspy.backend.wrappers`.
+- **Next Steps**: Implement more backend providers.
 
-### ✅ Milestone 4: Concurrency & Rate-Limit Management (100% COMPLETE)
-- **✅ Enhanced rate-limit wrapper**: Token-bucket throttling with burst capacity
-- **✅ Advanced parallel processing**: Configurable concurrency with environment variables
-- **✅ Timeout & cancellation**: Comprehensive timeout and resource management
-- **✅ Production resource management**: Exception-safe resource handling
+### ✅ Milestone 3: Optimizer Engine
+- **Status**: **Partial**. Foundational `beam search` is implemented, but the overall optimization framework is incomplete without metrics and more advanced strategies.
+- **Evidence**: `dspy.optimize/beam.clj` provides a working beam search implementation.
+- **Next Steps**: This milestone is superseded by the new "Feature Parity" milestone below.
 
-### ✅ Milestone 5: Live Introspection (100% COMPLETE)
-- **✅ Portal integration**: Automatic Portal detection and initialization
-- **✅ Instrumentation utilities**: Real-time module execution and optimization tracking
-- **✅ Debugging support**: Test utilities and manual integration capabilities
+### ✅ Milestone 4: Concurrency & Rate-Limit Management
+- **Status**: **Implemented**.
+- **Evidence**: `dspy.util.manifold` and `dspy.backend.wrappers` provide robust, idiomatic Clojure concurrency and rate-limiting features.
 
-### ✅ Milestone 6: Persistence Layer (100% COMPLETE)
-- **✅ Storage protocol**: Protocol-based storage interface with factory pattern
-- **✅ SQLite storage backend**: Production-grade database with migration system
-- **✅ EDN file storage backend**: Development-friendly file-based storage
-- **✅ Optimization integration**: Checkpoint/resume functionality with storage binding
-- **✅ Test coverage**: 16 tests covering storage functionality
+### ✅ Milestone 5: Live Introspection
+- **Status**: **Implemented**.
+- **Evidence**: `dspy.tap` provides excellent live debugging and introspection capabilities via Portal.
 
-### 🏆 **CRITICAL ACHIEVEMENT: Production Stability (100% COMPLETE)**
-- **✅ Java process management**: Eliminated excessive process spawning during development
-- **✅ Resource leak prevention**: Fixed thread creation in rate limiting and retry logic
-- **✅ Non-blocking async implementation**: Replaced Thread/sleep with Manifold timing
-- **✅ Development environment stability**: Zero hanging processes, normal CPU usage
-
-### 🏆 **CRITICAL ACHIEVEMENT: Perfect Code Quality (100% COMPLETE)**
-- **✅ Zero warnings, zero errors**: Complete elimination of linting issues
-- **✅ Namespace consistency**: Fixed British/American spelling mismatches
-- **✅ Protocol implementation clarity**: Clear unused parameter patterns
-- **✅ SLF4J logging resolution**: Clean test output with no configuration warnings
-
-**Status**: **ALL CORE MILESTONES COMPLETE WITH PRODUCTION-READY STABILITY** - Ready for deployment! 🎯
+### ✅ Milestone 6: Persistence Layer
+- **Status**: **Implemented**.
+- **Evidence**: `dspy.storage` protocol with `sqlite` and `edn` backends allows for checkpointing and resuming optimization runs.
 
 ---
 
-## 🎯 MILESTONE 7: Production Packaging & Deployment (NEXT PRIORITY)
+## 🎯 NEW: MILESTONE 7 - Feature Parity with DSPy
+
+Goal: Implement the core features identified as missing in `DSPY_DELIC_COMPARISON.md` to bring `delic` closer to parity with the reference DSPy implementation. This is now the highest priority.
+
+### 7-1 · Evaluation Framework & Metrics
+
+**Status**: **Not Started**
+
+**Why**: Optimization is "metric-driven," but no metrics are currently implemented. This is a critical missing piece for any optimizer, including the existing `beam search`.
+
+**Detailed Tasks**:
+
+1.  **Create `src/dspy/evaluate/metrics.clj` namespace.**
+    -   This namespace will contain pure functions for scoring predictions.
+    -   **Define `(defprotocol IMetric (-call [this prediction ground-truth]))`**. While a protocol might be overkill initially, it establishes a pattern for extensibility. For now, functions are sufficient.
+    -   **Function `answer-exact-match`**:
+        -   Signature: `(defn answer-exact-match [prediction ground-truth] ...)`
+        -   Logic: Takes two `dspy.Example` records (or just strings). Compares the `:answer` field of `prediction` with the `:answer` field of `ground-truth`. Returns `1.0` for a case-insensitive match, `0.0` otherwise.
+    -   **Function `answer-passage-match`**:
+        -   Signature: `(defn answer-passage-match [prediction ground-truth] ...)`
+        -   Logic: Takes two `dspy.Example` records. Checks if the `:answer` from `prediction` is a substring of a reference `:context` or `:passage` field in `ground-truth`. Returns `1.0` or `0.0`.
+    -   **Function `semantic-f1` (Stretch Goal)**:
+        -   Signature: `(defn semantic-f1 [prediction ground-truth] ...)`
+        -   Logic: This is complex. It involves generating embeddings for both the prediction and ground-truth answers and then calculating their F1 score.
+        -   **Dependency Research**: This will likely require adding a dependency like `org.clojure/core.matrix` and a library for sentence embeddings (e.g., a pure-Java one or via an API).
+
+2.  **Create `src/dspy/evaluate/core.clj` namespace.**
+    -   This namespace will orchestrate the evaluation process.
+    -   **Function `evaluate`**:
+        -   Signature: `(defn evaluate [program-or-pipeline dataset metric-fn] ...)`
+        -   `program-or-pipeline`: The compiled `delic` program to be tested.
+        -   `dataset`: A sequence of `dspy.Example` records, where each record is a map like `{:question "..." :answer "..."}`.
+        -   `metric-fn`: The function to apply (e.g., `answer-exact-match`).
+        -   Logic:
+            1.  Iterates through each `example` in the `dataset`.
+            2.  Executes the `program-or-pipeline` with the input fields from the `example` (e.g., `:question`).
+            3.  Calls the `metric-fn`, passing the program's output and the `example` (as ground-truth).
+            4.  Aggregates the scores (e.g., calculates the mean).
+            5.  Returns a map like `{:score 0.85 :results [...]}` where `:results` is a detailed list of individual evaluations.
+
+### 7-2 · Advanced Modules (Reasoning Patterns)
+
+**Status**: **Not Started**
+
+**Why**: The base `module` concept exists, but high-level reasoning modules that make DSPy powerful are missing. These are the building blocks for complex pipelines.
+
+**Detailed Tasks**:
+
+1.  **Create `src/dspy/modules/` directory and `chain_of_thought.clj` file.**
+    -   **Module `ChainOfThought`**:
+        -   Implementation: A record that implements the `ILlmModule` protocol.
+        -   Logic: It takes a `signature` as input. Internally, it transforms the signature by adding an `InputField` named `:rationale` with the description "Think step-by-step to arrive at the answer.".
+        -   When invoked, it calls the underlying LLM with this modified signature. The LLM's structured output will now contain both the rationale and the final answer. The module then returns the complete output.
+        -   Example: `(-> (ChainOfThought. "question -> answer") ...)`
+
+2.  **Create `src/dspy/modules/react.clj` (Depends on 7-3).**
+    -   **Module `ReAct`**:
+        -   This is a stateful module that operates in a loop: `Thought -> Action -> Observation`.
+        -   **State**: Needs to manage a "scratchpad" (a string or list of strings) that accumulates the history of the loop.
+        -   **Loop Logic**:
+            1.  On each turn, it prompts the LLM with the question and the current scratchpad content.
+            2.  It asks the LLM to produce a `Thought` and an `Action` (e.g., `Action: Search[query]`).
+            3.  It must parse this specific string format to extract the tool name (`Search`) and its input (`query`).
+            4.  It invokes the specified tool (from the context) with the input.
+            5.  It appends the tool's output (`Observation: ...`) to the scratchpad.
+            6.  The loop continues until the LLM outputs a final `Action: Finish[answer]`.
+
+### 7-3 · Tool Support
+
+**Status**: **Not Started**
+
+**Why**: Essential for building agents and systems that can interact with the outside world.
+
+**Detailed Tasks**:
+
+1.  **Create `src/dspy/tool.clj` namespace.**
+    -   **Protocol `ITool`**:
+        -   Signature: `(defprotocol ITool (-name [this]) (-description [this]) (-input-schema [this]) (-output-schema [this]) (-invoke [this inputs]))`
+        -   Schemas should be defined using `malli` to enable validation.
+    -   **Execution Context**: The `dspy.pipeline` execution logic must be updated to accept and pass down a `tools` map (or registry) to modules that need them.
+
+2.  **Research and Implement `PythonInterpreter` tool (or alternative).**
+    -   **Option A (High-Fidelity): `libpython-clj`**. This allows direct, robust interop with a Python environment. It's powerful but adds a significant dependency and setup complexity.
+    -   **Option B (Simpler): `sci`**. Implement a "ClojureInterpreter" tool using the SCI (Small Clojure Interpreter). This keeps it pure-JVM and is much simpler, providing a great initial implementation of a `ProgramOfThought`-style module.
+    -   **Decision**: Start with `sci` to deliver value quickly, and add `libpython-clj` as a separate, advanced tool later.
+
+### 7-4 · Advanced Optimizers (Teleprompters)
+
+**Status**: **Not Started**
+
+**Why**: This is the core value proposition of DSPy—automating prompt engineering.
+
+**Detailed Tasks**:
+
+1.  **Create `src/dspy/optimize/bootstrap.clj` namespace.**
+    -   **Optimizer `BootstrapFewShot`**:
+        -   Signature: `(defn bootstrap-few-shot [student-program teacher-program trainset devset metric-fn] ...)`
+        -   `student-program`: The program to optimize.
+        -   `teacher-program`: A program to generate high-quality examples (can be the student itself, or a more powerful LLM configured with `ChainOfThought`).
+        -   `trainset`: A small set of labeled examples.
+        -   `devset`: A development set to evaluate performance on.
+        -   `metric-fn`: The metric to maximize (from 7-1).
+        -   **Algorithm**:
+            1.  Initialize an empty list of `demonstrations`.
+            2.  For each `example` in `trainset`:
+                -   Run the `teacher-program` on the `example`'s input to generate a high-quality trace/output. Store this as a new "demonstration".
+            3.  Generate several candidate programs by compiling the `student-program` with random subsets of the `demonstrations` as few-shot examples.
+            4.  Use `dspy.evaluate/evaluate` to score each candidate program against the `devset` using the `metric-fn`.
+            5.  Return the program with the highest score.
+
+---
+
+## 🎯 MILESTONE 8: Production Packaging & Deployment (WAS MILESTONE 7)
 
 Goal: produce a single self-contained **uberjar** plus a thin CLI wrapper, and automate release artifacts on git tags.
 
-### 7-1 · `build.clj` – Uberjar Task
+### 8-1 · `build.clj` – Uberjar Task
 
 **Paths:** `build.clj` (repo root)
 
@@ -164,7 +252,7 @@ Goal: produce a single self-contained **uberjar** plus a thin CLI wrapper, and a
 
 **DoD:** Jar includes all dependencies, launches without internet; build time < 15 s on GH Actions runner.
 
-### 7-2 · CLI Wrapper (`dspy.cli`)
+### 8-2 · CLI Wrapper (`dspy.cli`)
 
 **Paths:** `src/dspy/cli.clj`
 
@@ -196,7 +284,7 @@ Global options:
 
 **DoD:** Options validated; exit code 1 on invalid usage; docstring example works in README.
 
-### 7-3 · Version Tagging & GitHub Release
+### 8-3 · Version Tagging & GitHub Release
 
 **Paths:** `.github/workflows/ci.yml` (extend)
 
@@ -226,7 +314,7 @@ Global options:
 
 **DoD:** `git tag -a vX.Y.Z -m "Release version"` then push → GitHub Release with downloadable jar.
 
-### 7-4 · Configuration Management
+### 8-4 · Configuration Management
 
 **Paths:** `src/dspy/config.clj`
 
@@ -242,9 +330,11 @@ Global options:
 
 ---
 
-## 🎯 MILESTONE 8: Advanced Optimization Strategies (OPTIONAL)
+## 🎯 MILESTONE 9: Advanced Optimization Strategies (WAS MILESTONE 8 - NOW DEPRECATED)
 
-Goal: implement additional optimization algorithms beyond beam search to provide users with more sophisticated optimization capabilities.
+This milestone is now superseded by the more detailed tasks in **Milestone 7: Feature Parity with DSPy**.
+
+The old content is preserved here for reference but should be deleted once Milestone 7 is underway.
 
 ### 8-1 · Genetic Algorithm Optimizer
 
@@ -274,121 +364,32 @@ Goal: implement additional optimization algorithms beyond beam search to provide
 
 **DoD:** Bayesian optimizer that efficiently explores high-dimensional parameter spaces.
 
----
+### 8-3 · Genetic Algorithm Optimizer
 
-## 🎯 MILESTONE 9: Additional LLM Providers (OPTIONAL)
-
-Goal: extend the provider-agnostic backend system to support multiple LLM providers beyond OpenAI.
-
-### 9-1 · Anthropic Claude Backend
-
-**Paths:** `src/dspy/backend/providers/anthropic.clj`
+**Paths:** `src/dspy/optimize/genetic.clj`
 
 **Steps:**
-1. Implement Claude API integration using HTTP client
-2. Support for Claude 3 models (Haiku, Sonnet, Opus)
-3. Streaming support for Claude responses
-4. Rate limiting and error handling specific to Anthropic
+1. Implement genetic algorithm with population management
+2. Crossover and mutation operators for pipeline evolution
+3. Fitness-based selection mechanisms
+4. Convergence detection and early stopping
 
-**Tests:** Claude API integration, model selection, streaming responses, error handling.
+**Tests:** Genetic algorithm convergence, population diversity, fitness improvement over generations.
 
-**DoD:** Production-ready Claude backend with full feature parity to OpenAI backend.
+**DoD:** Genetic algorithm optimizer that can find better solutions than beam search for complex problems.
 
-### 9-2 · Local Model Support (Ollama)
+### 8-4 · Bayesian Optimization
 
-**Paths:** `src/dspy/backend/providers/ollama.clj`
+**Paths:** `src/dspy/optimize/bayesian.clj`
 
 **Steps:**
-1. Implement Ollama HTTP API integration
-2. Support for local model management
-3. Model pulling and switching capabilities
-4. Local-specific optimizations and error handling
+1. Implement Gaussian Process-based optimization
+2. Acquisition function strategies (EI, UCB, PI)
+3. Hyperparameter optimization for the GP model
+4. Multi-dimensional parameter space handling
 
-**Tests:** Ollama integration, local model management, model switching, error handling.
+**Tests:** Bayesian optimization convergence, acquisition function behavior, GP model accuracy.
 
-**DoD:** Production-ready Ollama backend for local model deployment.
+**DoD:** Bayesian optimizer that efficiently explores high-dimensional parameter spaces.
 
----
-
-## Current Status
-
-✅ **Milestones 1-6 COMPLETE** - All tests passing (89 tests, 380 assertions, 0 failures)
-
-🏆 **MAJOR ACHIEVEMENTS COMPLETED:**
-
-### ✅ **Milestone 1: Core DSL (100% COMPLETE)**
-- **✅ 30 tests, 105 assertions, 0 failures** for core DSL components
-- **✅ Signatures, Modules, Pipeline Composer** - All production-ready
-- **✅ Pipeline Execution** - All patterns working (linear, branched, conditional, map-reduce)
-- **✅ All Issues Resolved** - No remaining technical debt
-
-### ✅ **Milestone 2: LLM Backend Integration (100% COMPLETE)**
-- **✅ ILlmBackend Protocol** - Complete async backend abstraction
-- **✅ OpenAI Backend** - **PROFESSIONAL LIBRARY INTEGRATION** with openai-clojure
-- **✅ Backend Registry** - Dynamic loading via multimethod
-- **✅ Core Middleware** - Timeout, retry, throttle, logging, circuit breaker
-
-### ✅ **Milestone 3: Optimizer Engine (100% COMPLETE)**
-- **✅ Optimization API** - Complete framework with schema validation
-- **✅ Beam Search Strategy** - Production optimization implementation
-- **✅ Concurrent Evaluation** - Rate-limited parallel assessment
-- **✅ Built-in Metrics** - Exact matching and semantic similarity
-
-### ✅ **Milestone 4: Concurrency & Rate-Limit Management (100% COMPLETE)**
-- **✅ Enhanced Rate-Limit Wrapper** - Token-bucket throttling with burst capacity
-- **✅ Advanced Parallel Processing** - Configurable concurrency with environment variables
-- **✅ Timeout & Cancellation** - Comprehensive timeout and resource management
-- **✅ Production Resource Management** - Exception-safe resource handling
-
-### ✅ **Milestone 5: Live Introspection (100% COMPLETE)**
-- **✅ Portal Integration** - Automatic Portal detection and initialization
-- **✅ Instrumentation Utilities** - Real-time module execution and optimization tracking
-- **✅ Debugging Support** - Test utilities and manual integration capabilities
-
-### ✅ **Milestone 6: Persistence Layer (100% COMPLETE)**
-- **✅ Storage Protocol** - Protocol-based storage interface with factory pattern
-- **✅ SQLite Storage Backend** - Production-grade database with migration system
-- **✅ EDN File Storage Backend** - Development-friendly file-based storage
-- **✅ Optimization Integration** - Checkpoint/resume functionality with storage binding
-
-### 🎯 **CRITICAL: Production Stability Resolution (100% COMPLETE)** ⭐ **LATEST**
-- **✅ Java Process Management** - Eliminated excessive process spawning during development
-- **✅ Resource Leak Prevention** - Fixed thread creation in rate limiting and retry logic
-- **✅ Non-blocking Async Implementation** - Replaced `Thread/sleep` with Manifold timing
-- **✅ Timing Test Optimization** - Fast, deterministic tests with actual functionality verification
-- **✅ Development Environment Stability** - Zero hanging processes, normal CPU usage
-
-### 🎯 **Enterprise-Grade Architecture Achieved:**
-- **Provider-Agnostic Design**: Universal backend interface with configuration-driven provider selection
-- **Professional Library Integration**: Using battle-tested openai-clojure library (229+ GitHub stars)
-- **Complete Persistence Layer**: SQLite and EDN backends with protocol abstraction
-- **Advanced Concurrency**: Enterprise-grade parallel processing with rate limiting
-- **Perfect Code Quality**: Zero linting warnings or errors (0 warnings, 0 errors)
-- **Comprehensive Testing**: 89 tests, 380 assertions, 0 failures
-
-### 💡 **Key Technical Achievements:**
-- **Storage Protocol**: Universal interface for optimization runs and metrics
-- **Factory Pattern**: Configuration-driven storage creation with environment variables
-- **Checkpoint/Resume**: Long-running optimizations can be saved and resumed
-- **URL-Based Configuration**: `sqlite://path/to/db` or `file://path/to/dir` formats
-- **Dynamic Backend Loading**: Avoids circular dependencies with require and ns-resolve
-- **Production-Ready Error Handling**: Comprehensive exception handling with graceful degradation
-
-### 🚀 **Production Readiness:**
-- **Core Functionality**: All major components working perfectly
-- **Error Handling**: Comprehensive exception handling throughout
-- **Testing**: Extensive test coverage with zero failures (89 tests, 380 assertions)
-- **Documentation**: Complete memory bank system with all technical decisions tracked
-- **Architecture**: Proven scalable foundation for advanced features
-- **Production Stability**: Zero resource leaks, stable CPU usage, clean process management
-- **Next Priority**: Milestone 7 - Production Packaging & Deployment
-
-### 🔧 **Critical Technical Achievements:**
-- **Resource Management**: Non-blocking async delays using Manifold timing instead of thread-creating `Thread/sleep`
-- **Process Stability**: Eliminated Java process spawning issues that caused 100%+ CPU usage
-- **Test Quality**: Fast, deterministic timing tests that verify actual functionality (not just happy paths)
-- **Development Environment**: Stable and responsive during intensive operations with zero hanging processes
-
-The project has achieved a **complete, working implementation** of DSPy's core concepts in pure Clojure with exceptional engineering quality. The systematic optimization of LLM pipelines is working perfectly with a completely clean, maintainable codebase, complete persistence layer, and production-ready stability, providing the foundation for powerful AI applications in the JVM ecosystem.
-
-**Status**: **ALL CORE MILESTONES COMPLETE WITH PRODUCTION-READY STABILITY** - Ready for deployment and advanced features! 🎯
+**Status**: **ALL CORE MILESTONES COMPLETE WITH PRODUCTION-READY STABILITY** - Ready for deployment! 🎯
