@@ -39,6 +39,23 @@ Persistent storage (SQLite/EDN) means expensive optimization runs can be paused,
 ### **Zero-Dependency Deployment**
 Compile to a single uberjar that runs anywhere with Java. No Python runtime, no virtual environments, no dependency hell.
 
+### **Optional Python Integration**
+When you need Python libraries (NumPy, pandas, OpenCV, etc.), delic provides seamless integration via `libpython-clj` without auto-initialization or lifecycle complexity.
+
+## ⚠️ Python Initialization Required
+
+Before using any `delic` functionality that depends on Python, you **must initialize the Python runtime**:
+
+```clojure
+(require '[dspy.python :as python])
+
+(python/init-python!
+  {:python-executable "/usr/bin/python3.10"
+   :library-path "/usr/lib/libpython3.10.so"})
+```
+
+If you skip this step, any call to a Python-based function will raise an internal error from `libpython-clj`.
+
 ## Core Concepts
 
 ```clojure
@@ -248,6 +265,86 @@ Configure persistence for optimization runs:
 
 ;; Environment-based configuration
 (def storage (create-storage)) ; Uses DSPY_STORAGE env var
+```
+
+### Python Integration
+
+delic provides optional Python integration via `libpython-clj` for accessing Python libraries like NumPy, pandas, OpenCV, etc.
+
+#### Setup Python Environment
+
+1. **Install Python dependencies**:
+   ```bash
+   pip install numpy pandas  # or your required libraries
+   ```
+
+2. **Initialize Python runtime** (required before using any Python functionality):
+   ```clojure
+   (require '[dspy.python :as python])
+
+   (python/init-python!
+     {:python-executable "/usr/bin/python3"
+      :library-path "/usr/lib/libpython3.10.so"})
+   ```
+
+3. **Common Python configurations**:
+   ```clojure
+   ;; macOS with Homebrew
+   (python/init-python!
+     {:python-executable "/opt/homebrew/bin/python3"
+      :library-path "/opt/homebrew/lib/libpython3.11.dylib"})
+
+   ;; Ubuntu 22.04
+   (python/init-python!
+     {:python-executable "/usr/bin/python3"
+      :library-path "/usr/lib/x86_64-linux-gnu/libpython3.10.so"})
+   ```
+
+#### Using Python Libraries
+
+Once initialized, you can use Python libraries directly:
+
+```clojure
+(require '[dspy.tools.python-tools :as py-tools])
+
+;; NumPy operations
+(py-tools/numpy-add 15 25)
+;; => 40
+
+(py-tools/numpy-array-stats [1 2 3 4 5])
+;; => {:mean 3.0, :std 1.58..., :min 1, :max 5, :sum 15}
+
+;; Pandas DataFrame analysis
+(py-tools/pandas-dataframe-info [{:name "Alice" :age 30}
+                                 {:name "Bob" :age 25}])
+;; => {:shape [2 2], :columns ["name" "age"], ...}
+```
+
+#### Python-based Tools
+
+Create delic tools that use Python libraries:
+
+```clojure
+(def numpy-tool (py-tools/create-numpy-tool))
+(def pandas-tool (py-tools/create-pandas-tool))
+
+;; Use in ReAct modules
+(require '[dspy.modules.react :as react]
+         '[dspy.tool :as tool])
+
+(def tool-context (tool/create-tool-context [numpy-tool pandas-tool]))
+(def react-module (react/react backend tool-context))
+
+@(react/call react-module
+   {:question "Calculate statistics for [10, 20, 30] using numpy"})
+```
+
+#### Environment Variables for Testing
+
+```bash
+export PYTHON_EXECUTABLE="/usr/bin/python3"           # Path to Python executable
+export PYTHON_LIBRARY_PATH="/usr/lib/libpython3.10.so" # Path to Python library
+export RUN_PYTHON_TESTS="true"                        # Enable Python integration tests
 ```
 
 ### Testing

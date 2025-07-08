@@ -52,4 +52,4 @@ It's also important to note where `delic` improves upon the DSPy model for its t
 -   **Schema-driven Development**: Using `malli` for validation is a significant enhancement that provides type safety and data integrity, something not present in the Python version.
 -   **Superior Debugging**: Live introspection via Clojure's Portal is a more powerful and interactive debugging experience than DSPy's `inspect_history`.
 -   **Pure-JVM Solution**: The core value proposition of `delic` is removing the need for Python interop, which it achieves.
--   **Idiomatic Async**: Asynchronous operations are a core part of the architecture via Manifold, not a wrapper, leading to a more robust concurrent design. 
+-   **Idiomatic Async**: Asynchronous operations are a core part of the architecture via Manifold, not a wrapper, leading to a more robust concurrent design.

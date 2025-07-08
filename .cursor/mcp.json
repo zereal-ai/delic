@@ -6,6 +6,9 @@
                 "-c",
                 "$WORKSPACE_FOLDER_PATHS/.cursor/mcp/clojure-mcp.sh"
             ]
+        },
+        "context7": {
+            "url": "https://mcp.context7.com/mcp"
         }
     }
 }

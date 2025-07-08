@@ -185,7 +185,7 @@
 #### Advanced Evaluation Patterns
 ```clojure
 ;; Main evaluation with options
-@(evaluate my-program dataset metrics/exact-match 
+@(evaluate my-program dataset metrics/exact-match
            {:parallel? false :timeout-ms 30000})
 
 ;; Dataset format flexibility

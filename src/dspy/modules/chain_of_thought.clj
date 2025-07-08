@@ -9,7 +9,7 @@
 
 (defn transform-signature
   "Transform a signature to add a rationale field for step-by-step reasoning.
-   
+
    Takes a signature map and returns a new signature with:
    - Original inputs unchanged
    - Added :rationale output field (before other outputs)
@@ -23,7 +23,7 @@
 
 (defn create-cot-prompt
   "Create a Chain of Thought prompt that encourages step-by-step reasoning.
-   
+
    Takes the original inputs and creates a prompt that asks the LLM to:
    1. Think step-by-step (rationale)
    2. Provide the final answer"
@@ -47,7 +47,7 @@
 
 (defn parse-cot-response
   "Parse the LLM response to extract rationale and final answer.
-   
+
    Expects the response to contain both rationale and answer fields.
    If rationale is missing, uses a default message."
   [response signature]
@@ -113,19 +113,19 @@
 
 (defn chain-of-thought
   "Create a Chain of Thought module.
-   
+
    Takes a signature and backend, returns a module that:
    1. Transforms the signature to add a :rationale field
    2. Prompts the LLM to think step-by-step
    3. Returns both the reasoning and the final answer
-   
+
    Args:
      signature - The original signature (e.g., question => answer)
      backend - The LLM backend to use
-     
+
    Options:
      :metadata - Additional metadata about the module
-     
+
    Usage:
      (chain-of-thought QA-signature my-backend)
      (chain-of-thought QA-signature my-backend :metadata {:description \"CoT QA\"})"
@@ -138,7 +138,7 @@
 
 (defn create-cot-module
   "Convenience function to create a Chain of Thought module.
-   
+
    This is an alias for chain-of-thought with a more descriptive name."
   [signature backend & opts]
   (apply chain-of-thought signature backend opts))
@@ -152,7 +152,7 @@
 
 (defn extract-answer
   "Extract the final answer from a Chain of Thought result.
-   
+
    Returns the first non-rationale field from the result."
   [cot-result]
   (let [answer-keys (remove #{:rationale} (keys cot-result))]
@@ -161,7 +161,7 @@
 
 (defn format-cot-result
   "Format a Chain of Thought result for display.
-   
+
    Returns a formatted string showing both reasoning and answer."
   [cot-result]
   (let [reasoning (extract-reasoning cot-result)

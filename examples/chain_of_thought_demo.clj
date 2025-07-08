@@ -138,4 +138,4 @@
 
 ;; Run the demo when this file is executed
 (when (= *file* (System/getProperty "babashka.file"))
-  (-main)) 
+  (-main))

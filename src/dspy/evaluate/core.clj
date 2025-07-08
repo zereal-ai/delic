@@ -1,6 +1,6 @@
 (ns dspy.evaluate.core
   "Core evaluation framework for DSPy programs.
-  
+
   This namespace provides the main evaluation orchestration, taking programs,
   datasets, and metrics to produce performance scores."
   (:require [dspy.evaluate.metrics :as metrics]
@@ -63,7 +63,7 @@
 
 (defn evaluate
   "Evaluates a DSPy program or pipeline against a dataset using a specified metric.
-  
+
   Args:
     program-or-pipeline - A compiled DSPy program/pipeline that can be invoked
     dataset - A sequence of examples, where each example is a map with input/output data
@@ -72,14 +72,14 @@
       :parallel? - Whether to evaluate examples in parallel (default: false)
       :max-concurrency - Maximum concurrent evaluations (default: 4)
       :timeout-ms - Timeout per evaluation in milliseconds (default: 30000)
-      
+
   Returns:
     A deferred that resolves to a map with:
       :score - Average score across all examples (0.0-1.0)
       :count - Number of examples evaluated
       :results - Detailed results for each example
       :errors - Any errors that occurred during evaluation
-      
+
   Examples:
     @(evaluate my-program dataset metrics/exact-match)
     @(evaluate my-pipeline dataset metrics/passage-match {:parallel? true})"
@@ -106,13 +106,13 @@
 
 (defn format-dataset
   "Formats a dataset into the standard evaluation format.
-  
+
   Handles various input formats:
   - Vector of maps with :question/:answer keys
   - Vector of maps with :input/:output keys
   - Vector of vectors [input output]
   - Already formatted dataset
-  
+
   Returns:
     Sequence of maps with consistent field names"
   [dataset]
@@ -154,16 +154,16 @@
 
 (defn evaluate-dataset
   "Convenience function to evaluate with common dataset formats.
-  
+
   Automatically handles different dataset formats and provides sensible defaults.
-  
+
   Args:
     program-or-pipeline - The program to evaluate
     dataset - Dataset in various formats (see format-dataset)
     metric-name - Keyword for built-in metric (:exact-match, :passage-match, :semantic-f1)
                   or a custom metric function
     options - Optional evaluation options
-    
+
   Returns:
     Deferred evaluation result"
   [program-or-pipeline dataset metric-name & [options]]
@@ -202,4 +202,4 @@
         (println (format "  ✗ Error: %s"
                          (ex-message (:error result)))))))
 
-  results) 
+  results)

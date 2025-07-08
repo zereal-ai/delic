@@ -32,15 +32,15 @@
 
 (defn safe-eval
   "Safely evaluate Clojure code using SCI.
-   
+
    Args:
      code - String containing Clojure code to evaluate
-     
+
    Options:
      :context - SCI context to use (default: default-sci-context)
      :timeout-ms - Timeout in milliseconds (default: 5000)
      :capture-output? - Whether to capture printed output (default: true)
-     
+
    Returns:
      Map with :result, :output, :error, and :execution-time-ms"
   [code & {:keys [context timeout-ms capture-output?]
@@ -69,10 +69,10 @@
 
 (defn format-result
   "Format evaluation result for display.
-   
+
    Args:
      result - Result from safe-eval
-     
+
    Returns:
      Formatted string representation"
   [result]
@@ -87,14 +87,14 @@
 
 (defn create-clojure-interpreter
   "Create a ClojureInterpreter tool instance.
-   
+
    Options:
      :context - Custom SCI context to use
      :timeout-ms - Default timeout for code execution
      :capture-output? - Whether to capture printed output by default
      :name - Custom name for the tool (default: :clojure-interpreter)
      :description - Custom description for the tool
-     
+
    Returns:
      Tool instance implementing ITool protocol"
   [& {:keys [context timeout-ms capture-output? name description]

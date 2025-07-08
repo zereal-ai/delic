@@ -127,4 +127,4 @@ DSPy is versatile and can be applied to a wide range of tasks, as demonstrated b
 -   **Reasoning**: Math reasoning with `ChainOfThought` and `ProgramOfThought`.
 -   **Advanced Tool Use**.
 -   **Code Generation**.
--   **Output Refinement**. 
+-   **Output Refinement**.

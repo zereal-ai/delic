@@ -101,7 +101,7 @@
 
 #### 3. Conditional Composition
 ```clojure
-(def conditional-pipeline 
+(def conditional-pipeline
   (mod/conditional-module predicate true-branch false-branch merger))
 ```
 - **Dynamic Routing**: Runtime decisions based on data

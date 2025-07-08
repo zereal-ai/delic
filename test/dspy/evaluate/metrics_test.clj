@@ -82,4 +82,4 @@
 
   (testing "Semantic F1 metric"
     (is (= 1.0 (metrics/semantic-f1-metric "Paris" "paris")))
-    (is (= "semantic-f1" (:metric-name (meta metrics/semantic-f1-metric)))))) 
+    (is (= "semantic-f1" (:metric-name (meta metrics/semantic-f1-metric))))))

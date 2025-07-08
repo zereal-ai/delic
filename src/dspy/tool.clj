@@ -8,7 +8,7 @@
 
 (defprotocol ITool
   "Protocol for tools that can be invoked by LLM modules.
-   
+
    Tools provide external capabilities like code execution, web search,
    database queries, API calls, etc. All methods return deferreds for
    async execution."
@@ -31,10 +31,10 @@
 
   (-invoke [this inputs]
     "Invoke the tool with the given inputs.
-     
+
      Args:
        inputs - Map conforming to the input schema
-       
+
      Returns:
        Deferred containing map conforming to output schema"))
 
@@ -43,10 +43,10 @@
 
 (defn register-tool!
   "Register a tool in the global tool registry.
-   
+
    Args:
      tool - Tool instance implementing ITool protocol
-     
+
    Returns:
      The registered tool"
   [tool]
@@ -56,7 +56,7 @@
 
 (defn unregister-tool!
   "Remove a tool from the global registry.
-   
+
    Args:
      tool-name - Keyword name of the tool to remove"
   [tool-name]
@@ -64,10 +64,10 @@
 
 (defn get-tool
   "Get a tool from the registry by name.
-   
+
    Args:
      tool-name - Keyword name of the tool
-     
+
    Returns:
      Tool instance or nil if not found"
   [tool-name]
@@ -75,7 +75,7 @@
 
 (defn list-tools
   "List all registered tools.
-   
+
    Returns:
      Vector of tool names (keywords)"
   []
@@ -83,7 +83,7 @@
 
 (defn get-all-tools
   "Get all registered tools as a map.
-   
+
    Returns:
      Map of tool-name -> tool-instance"
   []
@@ -98,11 +98,11 @@
 
 (defn validate-tool-input
   "Validate input data against a tool's input schema.
-   
+
    Args:
      tool - Tool instance
      inputs - Input data to validate
-     
+
    Returns:
      true if valid, false otherwise"
   [tool inputs]
@@ -111,11 +111,11 @@
 
 (defn validate-tool-output
   "Validate output data against a tool's output schema.
-   
+
    Args:
      tool - Tool instance
      outputs - Output data to validate
-     
+
    Returns:
      true if valid, false otherwise"
   [tool outputs]
@@ -124,11 +124,11 @@
 
 (defn explain-tool-input
   "Explain why tool input validation failed.
-   
+
    Args:
      tool - Tool instance
      inputs - Input data that failed validation
-     
+
    Returns:
      Human-readable explanation of validation failure"
   [tool inputs]
@@ -137,11 +137,11 @@
 
 (defn explain-tool-output
   "Explain why tool output validation failed.
-   
+
    Args:
      tool - Tool instance
      outputs - Output data that failed validation
-     
+
    Returns:
      Human-readable explanation of validation failure"
   [tool outputs]
@@ -152,16 +152,16 @@
 
 (defn invoke-tool
   "Invoke a tool with input validation and error handling.
-   
+
    Args:
      tool - Tool instance
      inputs - Input data
-     
+
    Options:
      :validate-input? - Whether to validate inputs (default: true)
      :validate-output? - Whether to validate outputs (default: true)
      :timeout-ms - Timeout in milliseconds (default: 30000)
-     
+
    Returns:
      Deferred containing validated output or error"
   [tool inputs & {:keys [validate-input? validate-output? timeout-ms]
@@ -195,14 +195,14 @@
 
 (defn invoke-tool-by-name
   "Invoke a tool by name from the registry.
-   
+
    Args:
      tool-name - Keyword name of the tool
      inputs - Input data
-     
+
    Options:
      Same as invoke-tool
-     
+
    Returns:
      Deferred containing validated output or error"
   [tool-name inputs & opts]
@@ -224,13 +224,13 @@
 
 (defn create-tool-context
   "Create a tool context for passing to modules.
-   
+
    Args:
      tools - Map of tool-name -> tool-instance or vector of tools
-     
+
    Options:
      :metadata - Additional metadata about the context
-     
+
    Returns:
      ToolContext instance"
   [tools & {:keys [metadata]}]
@@ -241,11 +241,11 @@
 
 (defn get-tool-from-context
   "Get a tool from a tool context.
-   
+
    Args:
      context - ToolContext instance
      tool-name - Keyword name of the tool
-     
+
    Returns:
      Tool instance or nil if not found"
   [context tool-name]
@@ -253,10 +253,10 @@
 
 (defn list-tools-in-context
   "List all tools available in a context.
-   
+
    Args:
      context - ToolContext instance
-     
+
    Returns:
      Vector of tool names (keywords)"
   [context]
@@ -264,15 +264,15 @@
 
 (defn invoke-tool-from-context
   "Invoke a tool from a context.
-   
+
    Args:
      context - ToolContext instance
      tool-name - Keyword name of the tool
      inputs - Input data
-     
+
    Options:
      Same as invoke-tool
-     
+
    Returns:
      Deferred containing validated output or error"
   [context tool-name inputs & opts]
@@ -288,10 +288,10 @@
 
 (defn tool-info
   "Get comprehensive information about a tool.
-   
+
    Args:
      tool - Tool instance
-     
+
    Returns:
      Map with tool details including schemas and examples"
   [tool]
@@ -306,10 +306,10 @@
 
 (defn describe-tool
   "Get a human-readable description of a tool including its interface.
-   
+
    Args:
      tool - Tool instance
-     
+
    Returns:
      String description suitable for LLM context"
   [tool]
@@ -325,10 +325,10 @@
 
 (defn describe-tools-in-context
   "Get descriptions of all tools in a context.
-   
+
    Args:
      context - ToolContext instance
-     
+
    Returns:
      String with descriptions of all tools"
   [context]
@@ -339,14 +339,14 @@
 
 (defn simple-tool
   "Create a simple tool from a function.
-   
+
    Args:
      name - Keyword name for the tool
      description - String description
      input-schema - Malli schema for inputs
      output-schema - Malli schema for outputs
      fn - Function that takes inputs and returns outputs (can return deferred)
-     
+
    Returns:
      Tool instance implementing ITool"
   [name description input-schema output-schema fn]
@@ -366,7 +366,7 @@
 
 (defn echo-tool
   "Create a simple echo tool for testing.
-   
+
    Returns:
      Tool that echoes its input as output"
   []
@@ -379,7 +379,7 @@
 
 (defn math-tool
   "Create a simple math evaluation tool for testing.
-   
+
    Returns:
      Tool that evaluates basic math expressions"
   []
@@ -423,10 +423,10 @@
 
 (defn get-tool-stats
   "Get execution statistics for a tool.
-   
+
    Args:
      tool-name - Keyword name of the tool
-     
+
    Returns:
      Map with execution statistics"
   [tool-name]
@@ -450,9 +450,9 @@
 
 (defn monitored-invoke-tool
   "Invoke a tool with execution monitoring and statistics.
-   
+
    Same interface as invoke-tool but tracks execution statistics.
-   
+
    Returns:
      Deferred containing validated output or error"
   [tool inputs & opts]
@@ -472,7 +472,7 @@
 
 (defn get-all-tool-stats
   "Get execution statistics for all tools.
-   
+
    Returns:
      Map of tool-name -> statistics"
   []

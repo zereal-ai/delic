@@ -1,6 +1,6 @@
 (ns dspy.modules.react
   "ReAct (Reasoning and Acting) module implementation.
-   
+
    ReAct combines reasoning and acting in an iterative loop:
    1. Thought: LLM reasons about the current situation
    2. Action: LLM decides to use a tool
@@ -240,7 +240,7 @@ Answer: 345")
 ;; ReAct Module Constructor
 (defn react
   "Create a ReAct module with tool integration.
-   
+
    Args:
      signature - Input/output signature (default: ReActSignature)
      backend - LLM backend for generating responses
@@ -248,7 +248,7 @@ Answer: 345")
      options - Configuration options:
        :max-iterations - Maximum reasoning iterations (default: 10)
        :include-examples? - Include examples in prompt (default: true)
-   
+
    Returns:
      ReAct module implementing ILlmModule"
   ([backend tools] (react ReActSignature backend tools {}))
