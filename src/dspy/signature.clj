@@ -23,8 +23,11 @@
   (let [input-props (mapv (fn [k] [k :string]) inputs)
         output-props (mapv (fn [k] [k :string]) outputs)
         all-props (concat input-props output-props)
-        schema-def (into [:map {:closed false}] all-props)]
-    (m/schema schema-def)))
+        schema-def (into [:map {:closed false}] all-props)
+        input-schema-def (into [:map {:closed false}] input-props)]
+    {:full-schema (m/schema schema-def)
+     :input-schema (m/schema input-schema-def)
+     :output-schema (m/schema (into [:map {:closed false}] output-props))}))
 
 (defmacro defsignature
   "Define a signature for LLM module input/output contracts.
@@ -42,7 +45,9 @@
     `(do
        (def ~name
          ~@(when doc-string [doc-string])
-         (with-meta ~sig-map {:malli/schema ~schema}))
+         (with-meta ~sig-map {:malli/schema (:full-schema ~schema)
+                              :malli/input-schema (:input-schema ~schema)
+                              :malli/output-schema (:output-schema ~schema)}))
        (swap! registry assoc '~name ~name)
        (var ~name))))
 
@@ -59,13 +64,13 @@
 (defn validate-input
   "Validate input data against signature schema."
   [signature data]
-  (when-let [schema (:malli/schema (meta signature))]
+  (when-let [schema (:malli/input-schema (meta signature))]
     (m/validate schema data)))
 
 (defn generate-sample
   "Generate sample data for signature (useful for testing)."
   [signature]
-  (when-let [schema (:malli/schema (meta signature))]
+  (when-let [schema (:malli/input-schema (meta signature))]
     (mg/generate schema)))
 
 (defn ^:export spec-of
@@ -87,11 +92,10 @@
     (validate-input signature value)))
 
 (defn ^:export validate-output
-  "Validate output data against signature schema.
-
-   This is the same as validate-input but provides semantic clarity."
+  "Validate output data against signature schema."
   [signature data]
-  (validate-input signature data))
+  (when-let [schema (:malli/output-schema (meta signature))]
+    (m/validate schema data)))
 
 (defn ^:export explain
   "Explain why validation failed.
@@ -103,7 +107,7 @@
    Returns:
      Human-readable explanation of validation failure"
   [signature data]
-  (when-let [schema (:malli/schema (meta signature))]
+  (when-let [schema (:malli/input-schema (meta signature))]
     (m/explain schema data)))
 
 (defn generate-examples
@@ -118,7 +122,7 @@
   ([signature]
    (generate-examples signature 5))
   ([signature n]
-   (when-let [schema (:malli/schema (meta signature))]
+   (when-let [schema (:malli/input-schema (meta signature))]
      (repeatedly n #(mg/generate schema)))))
 
 (defn signature-info
@@ -130,5 +134,7 @@
   {:inputs (:inputs signature)
    :outputs (:outputs signature)
    :schema (:malli/schema (meta signature))
+   :input-schema (:malli/input-schema (meta signature))
+   :output-schema (:malli/output-schema (meta signature))
    :examples (generate-examples signature 3)
    :registry-name (first (keep (fn [[k v]] (when (= v signature) k)) @registry))})

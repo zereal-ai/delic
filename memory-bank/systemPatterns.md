@@ -1,628 +1,323 @@
 # System Patterns: delic
 
-## Architecture Overview
+## Core Architecture Principles
 
-### Core Design Principles
-1. **Protocol-First**: All major abstractions defined as protocols
-2. **Async-First**: Manifold deferreds throughout for scalability
-3. **Schema-Driven**: Malli schemas for runtime validation
-4. **Composable**: Small, focused components that compose well
-5. **Provider-Agnostic**: Configuration-driven provider selection
-6. **Storage-Agnostic**: Protocol-based storage with multiple backends
+### 1. Protocol-Driven Design
+- **Interface Segregation**: Clear separation between abstract protocols and concrete implementations
+- **Plugin Architecture**: Extensible system where new backends, optimizers, and storage can be added without changing core code
+- **Dependency Inversion**: High-level modules don't depend on low-level modules; both depend on abstractions
 
-## Component Architecture
+### 2. Async-First Architecture
+- **Manifold Deferreds**: All I/O operations return deferreds for non-blocking execution
+- **Composable Async**: Deferreds chain naturally with `d/chain`, `d/catch`, `d/zip` for complex workflows
+- **Resource Management**: Proper cleanup and cancellation throughout async operations
 
-### 1. Core DSL Layer
-```
-Signature → Module → Pipeline → Optimization
-```
+### 3. Schema-Driven Development
+- **Runtime Validation**: Malli schemas validate all inputs and outputs at runtime
+- **Type Safety**: Clear contracts between components with descriptive error messages
+- **Configuration Validation**: All configuration options validated against schemas
 
-**Pattern**: Declarative composition with schema validation
-- **Signatures**: Define input/output contracts with Malli schemas
-- **Modules**: Async components implementing ILlmModule protocol
-- **Pipelines**: DAG-based composition with dependency resolution
-- **Optimization**: Strategy-based improvement with concurrent evaluation
+## Core Protocols & Abstractions
 
-### 2. Backend Integration Layer
-```
-Protocol → Provider → Wrapper → Client
-```
-
-**Pattern**: Provider-agnostic abstraction with middleware composition
-- **ILlmBackend Protocol**: Universal async interface
-- **Provider Implementations**: Concrete LLM provider integrations
-- **Middleware Stack**: Wrappers for resilience and observability
-- **Factory Pattern**: Configuration-driven backend creation
-
-### 3. Optimization Engine Layer
-```
-Strategy → Evaluation → Metrics → History
-```
-
-**Pattern**: Pluggable optimization with concurrent assessment
-- **Strategy Multimethod**: Pluggable optimization algorithms
-- **Concurrent Evaluation**: Rate-limited parallel pipeline assessment
-- **Built-in Metrics**: Exact matching and semantic similarity
-- **Optimization History**: Complete tracking of improvement process
-
-### 4. Concurrency & Resource Management Layer
-```
-Parallel Processing → Rate Limiting → Resource Management → Monitoring
-```
-
-**Pattern**: Enterprise-grade concurrency with controlled resource usage
-- **Parallel Processing**: Configurable concurrency with environment variables
-- **Rate Limiting**: Token-bucket throttling with burst capacity
-- **Resource Management**: Exception-safe handling with guaranteed cleanup
-- **Performance Monitoring**: Built-in timing and observability
-
-### 5. Live Introspection Layer
-```
-Portal Integration → Instrumentation → Debugging → Monitoring
-```
-
-**Pattern**: Real-time debugging and monitoring capabilities
-- **Portal Integration**: Automatic Portal detection and initialization
-- **Instrumentation**: Real-time module execution and optimization tracking
-- **Debugging Support**: Test utilities and manual integration capabilities
-- **Error Handling**: Graceful degradation when Portal unavailable
-
-### 6. Persistence Layer ⭐ **LATEST**
-```
-Storage Protocol → Backend Implementations → Integration → Configuration
-```
-
-**Pattern**: Protocol-based storage with multiple backend implementations
-- **Storage Protocol**: Universal interface for optimization runs and metrics
-- **SQLite Backend**: Production-grade database with migration system
-- **EDN Backend**: Development-friendly file-based storage
-- **Optimization Integration**: Checkpoint/resume functionality with storage binding
-
-## Key Design Patterns
-
-### 1. Protocol-Based Abstractions
+### ILlmBackend Protocol
 ```clojure
-;; Universal interfaces that work with any implementation
 (defprotocol ILlmBackend
-  (generate [this prompt options])
-  (embeddings [this text options]))
-
-(defprotocol Storage
-  (create-run! [this pipeline])
-  (append-metric! [this run-id iter score payload])
-  (load-run [this run-id])
-  (load-history [this run-id]))
+  (-generate [backend prompt options])
+  (-embeddings [backend texts options])
+  (-stream [backend prompt options]))
 ```
 
-### 2. Factory Pattern with Configuration
+**Design Patterns**:
+- **Provider Abstraction**: Same interface works with OpenAI, Anthropic, local models
+- **Wrapper Pattern**: Middleware can wrap any backend (throttling, retry, logging)
+- **Factory Pattern**: `create-backend` function creates backends from configuration
+
+### ILlmModule Protocol
 ```clojure
-;; Configuration-driven creation, no provider-specific code
-(def backend (bp/create-backend {:provider :openai :model "gpt-4o"}))
-(def storage (storage/create-storage "sqlite://./runs.db"))
+(defprotocol ILlmModule
+  (-call [module inputs])
+  (-signature [module]))
 ```
 
-### 3. Middleware Composition
+**Design Patterns**:
+- **Strategy Pattern**: Different module implementations (Predict, ChainOfThought, ReAct)
+- **Decorator Pattern**: Modules can wrap other modules for enhanced functionality
+- **Composite Pattern**: Pipeline composer combines multiple modules
+
+### ITool Protocol
 ```clojure
-;; Composable wrappers for cross-cutting concerns
-(-> (create-backend {:type :openai})
-    (wrap-throttle {:rps 5})
-    (wrap-retry {:max-retries 3})
-    (wrap-timeout {:timeout-ms 10000}))
+(defprotocol ITool
+  (-name [tool])
+  (-description [tool])
+  (-input-schema [tool])
+  (-output-schema [tool])
+  (-execute [tool inputs]))
 ```
 
-### 4. Strategy Pattern for Optimization
-```clojure
-;; Pluggable optimization algorithms
-(defmulti compile-strategy :strategy)
-(defmethod compile-strategy :beam [config] ...)
-(defmethod compile-strategy :random [config] ...)
-```
+**Design Patterns**:
+- **Command Pattern**: Tools encapsulate operations that can be executed
+- **Registry Pattern**: Global tool registry for discovery and execution
+- **Validation Pattern**: Schema-based input/output validation
 
-### 5. Async-First with Manifold
-```clojure
-;; Non-blocking operations throughout
-(defn optimize [pipeline training-data metric config]
-  (d/chain
-   (create-optimization-run pipeline config)
-   #(evaluate-candidates % training-data metric)
-   #(select-best-candidates % config)))
-```
-
-### 6. Schema-Driven Validation
-```clojure
-;; Runtime validation with clear error messages
-(def OptimizationConfig
-  [:map
-   [:strategy keyword?]
-   [:max-iterations pos-int?]
-   [:concurrency pos-int?]])
-```
-
-## Storage Architecture ⭐ **LATEST**
-
-### Storage Protocol Design
+### Storage Protocol
 ```clojure
 (defprotocol Storage
-  "Universal storage interface for optimization runs and metrics."
-  (create-run! [this pipeline] "Create new optimization run")
-  (append-metric! [this run-id iter score payload] "Save optimization metric")
-  (load-run [this run-id] "Retrieve stored pipeline")
-  (load-history [this run-id] "Get complete optimization history"))
+  (create-run! [storage pipeline-data])
+  (append-metric! [storage run-id metric-data])
+  (load-run [storage run-id])
+  (load-history [storage run-id]))
 ```
 
-### Backend Implementations
+**Design Patterns**:
+- **Repository Pattern**: Abstract storage operations from business logic
+- **Factory Pattern**: Storage creation from URLs (sqlite://, file://)
+- **Strategy Pattern**: Different storage backends (SQLite, EDN files)
 
-#### SQLite Backend
-- **Schema**: `runs` and `metrics` tables with proper relationships
-- **Migration**: Automatic database initialization and schema management
-- **Serialization**: Proper Clojure data serialization/deserialization
-- **Transactions**: Safe concurrent access with transaction support
-- **Configuration**: Support for both file-based and in-memory databases
+## Module System Architecture
 
-#### EDN Backend
-- **Structure**: Directory-per-run organization (`./runs/{run-id}/`)
-- **Files**: `pipeline.edn` and `metrics.edn` for each run
-- **Serialization**: Pure Clojure data serialization (no external dependencies)
-- **Simplicity**: No database setup required for development
-- **Inspection**: Easy debugging and manual inspection of stored data
+### Signature System
+- **Declarative Specification**: `defsignature` macro for input/output definitions
+- **Schema Integration**: Automatic Malli schema generation from signatures
+- **Validation Separation**: Separate validation for inputs and outputs
+- **Metadata Preservation**: Rich metadata for debugging and introspection
 
-### Factory Pattern
+### Module Composition Patterns
+
+#### 1. Sequential Composition
 ```clojure
-;; Environment-based configuration
-(create-storage) ; Uses DSPY_STORAGE env var or defaults to EDN
-
-;; URL-based configuration
-(create-storage "sqlite://./optimization.db")
-(create-storage "file://./custom-runs")
-
-;; Dynamic backend loading to avoid circular dependencies
-(defn make-storage [config]
-  (case (:type config)
-    :sqlite (sqlite/->SQLiteStorage (:url config))
-    :file (edn-storage/->EDNStorage (:dir config))))
+(def pipeline (mod/compose-modules tokenizer embedder classifier))
 ```
+- **Linear Flow**: Output of one module becomes input of next
+- **Error Propagation**: Failures halt the pipeline with clear error context
+- **Type Safety**: Schema validation between module boundaries
 
-### Integration with Optimization Engine
+#### 2. Parallel Composition
 ```clojure
-;; Dynamic storage binding in optimization context
-(defn optimize [pipeline training-data metric config]
-  (let [storage (:storage config (create-storage))]
-    (binding [*storage* storage]
-      (create-optimization-run pipeline config))))
-
-;; Checkpoint saving in beam search
-(defn beam-search [pipeline training-data metric config]
-  (let [checkpoint-interval (:checkpoint-interval config 10)]
-    (doseq [iter (range max-iterations)]
-      (when (zero? (mod iter checkpoint-interval))
-        (save-checkpoint! *storage* run-id iter pipeline)))))
+(def parallel-pipeline (mod/parallel-modules [embedder-1 embedder-2] merger))
 ```
+- **Concurrent Execution**: Multiple modules run simultaneously
+- **Result Aggregation**: Merger combines parallel results
+- **Resource Efficiency**: Optimal utilization of async capabilities
 
-## Evaluation Framework Architecture ⭐ **NEWEST**
-
-### Evaluation Protocol Design
+#### 3. Conditional Composition
 ```clojure
-;; Core evaluation orchestration
-(defn evaluate
-  "Evaluates a DSPy program against a dataset using a specified metric."
-  [program-or-pipeline dataset metric-fn options]
-  (d/chain
-   (if (:parallel? options)
-     (evaluate-parallel program-or-pipeline dataset metric-fn max-concurrency timeout-ms)
-     (evaluate-sequential program-or-pipeline dataset metric-fn timeout-ms))
-   (fn [results]
-     (aggregate-evaluation-results results))))
+(def conditional-pipeline 
+  (mod/conditional-module predicate true-branch false-branch merger))
 ```
+- **Dynamic Routing**: Runtime decisions based on data
+- **Branch Isolation**: Each branch operates independently
+- **Result Unification**: Consistent output format regardless of branch
 
-### Metrics System Architecture
+## Advanced Module Patterns
 
-#### Metric Function Pattern
+### ChainOfThought Module
+- **Signature Transformation**: Automatically adds `:rationale` field to signatures
+- **Prompt Enhancement**: Context-aware prompting for step-by-step reasoning
+- **Response Parsing**: Structured extraction of reasoning and answers
+- **Fallback Handling**: Graceful degradation when reasoning is missing
+
+### ReAct Module
+- **Loop Management**: Iterative thought-action-observation cycles
+- **Tool Integration**: Seamless execution of external tools
+- **State Tracking**: Maintains conversation history and step progression
+- **Termination Conditions**: Multiple exit strategies (answer found, max iterations, errors)
+
+### Tool System
+- **Safe Execution**: SCI-based Clojure interpreter for secure code execution
+- **Schema Validation**: Input/output validation for all tool interactions
+- **Error Isolation**: Tool failures don't crash the entire system
+- **Context Management**: Tool discovery and execution within defined contexts
+
+## Concurrency & Resource Management
+
+### Rate Limiting Pattern
 ```clojure
-;; All metrics follow consistent signature and return pattern
-(defn answer-exact-match
-  "Case-insensitive exact string matching metric."
-  [prediction ground-truth]
-  (if (and prediction ground-truth)
-    (if (= (str/lower-case (str/trim prediction))
-           (str/lower-case (str/trim ground-truth)))
-      1.0
-      0.0)
-    0.0))
-
-;; Metrics have metadata for identification
-(def exact-match
-  ^{:metric-name "exact-match"
-    :description "Case-insensitive exact string matching"}
-  answer-exact-match)
+(def throttled-backend (wrap-throttle backend {:rps 5 :burst 10}))
 ```
+- **Token Bucket Algorithm**: Smooth rate distribution with burst capacity
+- **Fair Queuing**: All backend methods share the same rate limit
+- **Non-blocking Delays**: Manifold-based delays instead of thread blocking
 
-#### Built-in Metrics
-- **exact-match**: Case-insensitive exact string matching (1.0/0.0)
-- **passage-match**: Substring matching within passages/contexts
-- **semantic-f1**: Placeholder implementation (falls back to exact match)
-- **create-metric**: Utility for custom metric creation with validation
-
-### Evaluation Engine Components
-
-#### 1. **Single Example Evaluation**
+### Parallel Processing Pattern
 ```clojure
-(defn- evaluate-single
-  "Evaluates a single example with timeout and error handling."
-  [program-or-pipeline example metric-fn timeout-ms]
-  (d/catch
-   (d/timeout!
-    (d/chain
-     (let [input-fields (dissoc example :answer :expected :ground-truth)]
-       (program-or-pipeline input-fields))
-     (fn [prediction]
-       (let [ground-truth (or (:ground-truth example) (:expected example) example)
-             score (metric-fn prediction ground-truth)]
-         {:success true :example example :prediction prediction 
-          :ground-truth ground-truth :score score})))
-    timeout-ms)
-   (fn [error]
-     {:success false :error error :example example :score 0.0})))
+(parallel-map-unordered process-fn collection {:concurrency 8})
 ```
+- **Controlled Concurrency**: Environment-configurable parallelism
+- **Memory Efficiency**: Chunked processing for large collections
+- **Early Termination**: Cancel remaining work on first error
+- **Order Variants**: Both order-preserving and unordered processing
 
-#### 2. **Sequential Evaluation**
+### Resource Lifecycle Pattern
 ```clojure
-(defn- evaluate-sequential
-  "Evaluates examples sequentially using proper deferred chains."
-  [program-or-pipeline dataset metric-fn timeout-ms]
-  (reduce (fn [results-deferred example]
-            (d/chain
-             results-deferred
-             (fn [results]
-               (d/chain
-                (evaluate-single program-or-pipeline example metric-fn timeout-ms)
-                (fn [result]
-                  (conj results result))))))
-          (d/success-deferred [])
-          dataset))
+(with-resource-cleanup
+  (fn [] (create-expensive-resource))
+  (fn [resource] (process-with-resource resource))
+  (fn [resource] (cleanup-resource resource)))
 ```
+- **Exception Safety**: Guaranteed cleanup even on errors
+- **Async Compatibility**: Works with deferred-returning operations
+- **Composability**: Can be nested and combined with other patterns
 
-#### 3. **Dataset Format Flexibility**
+## Optimization Engine Architecture
+
+### Strategy Pattern for Optimizers
 ```clojure
-(defn format-dataset
-  "Handles multiple dataset formats with automatic normalization."
-  [dataset]
-  (cond
-    ;; Already formatted (has both :question and :answer keys)
-    (and (sequential? dataset) (map? (first dataset))
-         (:question (first dataset)) (:answer (first dataset)))
-    dataset
-    
-    ;; Vector of [input output] pairs
-    (and (sequential? dataset) (vector? (first dataset)) (= 2 (count (first dataset))))
-    (map (fn [[input output]] {:question input :answer output}) dataset)
-    
-    ;; Vector of maps with other key names - standardize
-    (and (sequential? dataset) (map? (first dataset)))
-    (map (fn [example]
-           (let [input-key (or (when (:question example) :question)
-                               (when (:input example) :input)
-                               (when (:query example) :query) :question)
-                 output-key (or (when (:answer example) :answer)
-                                (when (:output example) :output)
-                                (when (:expected example) :expected) :answer)]
-             (-> example
-                 (assoc :question (get example input-key))
-                 (assoc :answer (get example output-key)))))
-         dataset)))
+(defmulti optimize-strategy :strategy)
+(defmethod optimize-strategy :beam [config pipeline training-data metric]
+  ;; Beam search implementation
+  )
 ```
+- **Pluggable Algorithms**: Easy to add new optimization strategies
+- **Configuration-Driven**: Strategy selection via configuration
+- **Consistent Interface**: All strategies follow same contract
 
-### Evaluation Pattern Benefits
+### Evaluation Framework
+- **Metric Abstraction**: Pluggable scoring functions
+- **Dataset Flexibility**: Multiple input formats with automatic normalization
+- **Async Evaluation**: Non-blocking assessment with timeout support
+- **Error Resilience**: Individual evaluation failures don't stop the process
 
-#### 1. **Async-First Design**
-- **Non-blocking**: All evaluation operations use Manifold deferreds
-- **Timeout Support**: Configurable timeouts with graceful error handling
-- **Error Resilience**: Comprehensive error handling with partial results
-- **Resource Management**: No thread leaks or hanging processes
-
-#### 2. **Dataset Flexibility**
-- **Multiple Formats**: Supports question/answer, input/output, vector pairs
-- **Automatic Conversion**: Transparent format normalization
-- **Backward Compatibility**: Works with existing dataset formats
-- **Easy Integration**: Simple API for different data sources
-
-#### 3. **Production Stability**
-- **Resource Leaks Fixed**: Eliminated Java process spawning issues
-- **CPU Stability**: Stable resource usage during evaluation
-- **Test Coverage**: Comprehensive test suite with 77 assertions
-- **Error Handling**: Robust error propagation and recovery
-
-### Integration with Optimization Engine
-```clojure
-;; Metric-driven optimization using evaluation framework
-(defn optimize [pipeline training-data metric config]
-  (let [evaluation-fn (partial evaluate pipeline training-data metric)]
-    (d/chain
-     (generate-candidates pipeline config)
-     (fn [candidates]
-       (d/chain
-        (apply d/zip (map evaluation-fn candidates))
-        (fn [evaluations]
-          (select-best-candidates evaluations config)))))))
-
-;; Evaluation framework enables all optimization strategies
-(defmethod compile-strategy :beam [config]
-  (fn [pipeline training-data metric]
-    (beam-search pipeline training-data metric config)))
-```
-
-### Benefits Achieved
-- **✅ DSPy Compatibility**: All core DSPy metrics implemented with identical behavior
-- **✅ Production Ready**: Robust error handling, timeout support, stable resource usage
-- **✅ Developer Experience**: Pretty printing, debugging utilities, comprehensive test coverage
-- **✅ Async Performance**: Non-blocking evaluation with proper timeout handling
-- **✅ Flexible Integration**: Supports multiple dataset formats and custom metrics
-- **✅ Foundation for Advanced Optimizers**: Enables metric-driven optimization strategies
-
-The evaluation framework is now the solid foundation that enables all advanced optimizer development, providing the critical missing piece for metric-driven optimization of DSPy programs and pipelines.
+### Persistence Integration
+- **Dynamic Binding**: Storage context available throughout optimization
+- **Checkpoint Strategy**: Configurable save intervals
+- **Resume Capability**: Complete state restoration from storage
+- **History Tracking**: Full optimization trail for analysis
 
 ## Error Handling Patterns
 
-### 1. Structured Exception Handling
-```clojure
-;; Clear error contexts with data
-(throw (ex-info "Invalid optimization configuration"
-                {:config config
-                 :errors validation-errors}))
-```
+### Graceful Degradation
+- **Fallback Strategies**: Alternative paths when primary operations fail
+- **Partial Results**: Return what's available even if some operations fail
+- **Error Context**: Rich error information for debugging
 
-### 2. Graceful Degradation
+### Circuit Breaker Pattern
 ```clojure
-;; Fallback patterns when optional features unavailable
-(when (portal-available?)
-  (install-portal-tap!)
-  (log/info "Portal integration enabled"))
+(def protected-backend (wrap-circuit-breaker backend {:failure-threshold 5}))
 ```
+- **Failure Detection**: Automatic detection of backend failures
+- **Fast Failure**: Immediate failure when circuit is open
+- **Recovery Testing**: Periodic attempts to restore service
 
-### 3. Resource Safety
+### Retry with Exponential Backoff
 ```clojure
-;; Guaranteed cleanup with try/finally
-(try
-  (process-data resource data)
-  (finally
-    (cleanup-resource resource)))
+(def resilient-backend (wrap-retry backend {:max-retries 3 :initial-delay 100}))
 ```
+- **Transient Failure Handling**: Automatic retry for temporary issues
+- **Backoff Strategy**: Exponential delays with jitter
+- **Retry Limits**: Bounded retry attempts to prevent infinite loops
 
-## Configuration Patterns
+## Live Introspection & Debugging
 
-### 1. Environment Variables
+### Portal Integration
+- **Automatic Detection**: Portal availability detected at runtime
+- **Tap Installation**: Automatic `tap>` integration when available
+- **Data Visualization**: Real-time data exploration and debugging
+- **Graceful Degradation**: No impact when Portal unavailable
+
+### Instrumentation Pattern
 ```clojure
-;; Sensible defaults with environment override
-(def default-config
-  {:parallelism (or (System/getenv "DSPY_PARALLELISM") 4)
-   :storage (or (System/getenv "DSPY_STORAGE") "file://./runs")})
+(tap> {:event :module-execution
+       :module module-name
+       :inputs inputs
+       :outputs outputs
+       :duration duration-ms})
 ```
-
-### 2. URL-Based Configuration
-```clojure
-;; Flexible configuration via URLs
-"sqlite://./optimization.db" → {:type :sqlite :url "jdbc:sqlite:./optimization.db"}
-"file://./custom-runs" → {:type :file :dir "./custom-runs"}
-```
-
-### 3. Nested Configuration
-```clojure
-;; Hierarchical configuration structure
-{:optimization
- {:strategy :beam
-  :beam-width 4
-  :max-iterations 10}
- :backend
- {:provider :openai
-  :model "gpt-4o"}
- :storage
- {:type :sqlite
-  :url "jdbc:sqlite:./runs.db"}}
-```
+- **Event-Driven Logging**: Structured events for key operations
+- **Performance Monitoring**: Timing information for all operations
+- **Data Inspection**: Full input/output capture for debugging
 
 ## Testing Patterns
 
-### 1. Protocol Compliance Testing
+### Mock Backend Pattern
 ```clojure
-;; Common test suite applied to all implementations
-(defn test-storage-implementation [storage-impl]
-  (testing "create-run! creates a new run and returns ID"
-    (let [run-id (storage/create-run! storage-impl test-pipeline)]
-      (is (string? run-id))))
-  ;; ... more tests
-  )
-```
-
-### 2. Mock Implementations
-```clojure
-;; Clear intent with underscore prefixes
-(defrecord MockBackend []
+(defrecord MockBackend [responses]
   ILlmBackend
-  (generate [_ _prompt _options] (d/success-deferred "mock response"))
-  (embeddings [_ _text _options] (d/success-deferred [0.1 0.2 0.3])))
+  (-generate [_ prompt options]
+    (d/success-deferred (first @responses))))
 ```
+- **Deterministic Testing**: Predictable responses for test scenarios
+- **State Isolation**: Each test gets fresh mock state
+- **Response Cycling**: Support for multi-interaction scenarios
 
-### 3. Temporary Resource Management
+### Property-Based Testing
+- **Schema Generation**: Automatic test data generation from Malli schemas
+- **Edge Case Discovery**: Systematic exploration of input space
+- **Regression Prevention**: Generated tests catch future breaking changes
+
+### Integration Testing
+- **Real Backend Testing**: Optional tests with actual LLM providers
+- **Environment Gating**: Tests only run when API keys available
+- **Rate Limit Respect**: Throttled testing to avoid API limits
+
+## Configuration Management
+
+### Environment-Driven Configuration
 ```clojure
-;; Safe test isolation with cleanup
-(defn with-temp-dir [test-fn]
-  (let [temp-dir-path (temp-dir)]
-    (try
-      (binding [*temp-dir* temp-dir-path]
-        (test-fn))
-      (finally
-        (cleanup-temp-dir temp-dir-path)))))
+{:backend {:type :openai
+           :api-key (env :openai-api-key)
+           :model "gpt-4o"}
+ :storage {:url (env :dspy-storage "file://./runs")}
+ :concurrency {:parallelism (env :dspy-parallelism 4)}}
 ```
+- **Environment Variables**: Runtime configuration from environment
+- **Sensible Defaults**: System works without configuration
+- **Type Coercion**: Automatic conversion of environment strings
 
-## Performance Patterns
-
-### 1. Concurrent Evaluation
-```clojure
-;; Rate-limited parallel processing
-(defn evaluate-candidates [candidates training-data metric]
-  (rate-limited-parallel-map
-   concurrency rate-limit
-   #(evaluate-pipeline % training-data metric)
-   candidates))
-```
-
-### 2. Batch Processing
-```clojure
-;; Memory-efficient large dataset processing
-(defn process-batches [batch-size concurrency batch-fn coll]
-  (->> (partition-all batch-size coll)
-       (parallel-map concurrency batch-fn)
-       (apply concat)))
-```
-
-### 3. Resource Pooling
-```clojure
-;; Efficient resource reuse
-(defn with-resource [resource operation-fn cleanup-fn]
-  (try
-    (operation-fn resource)
-    (finally
-      (cleanup-fn resource))))
-```
-
-## Extension Patterns
-
-### 1. Adding New LLM Providers
-```clojure
-;; Implement ILlmBackend protocol
-(defrecord AnthropicBackend [config]
-  ILlmBackend
-  (generate [this prompt options] ...)
-  (embeddings [this text options] ...))
-
-;; Register with multimethod
-(defmethod bp/create-backend :anthropic [config]
-  (->AnthropicBackend config))
-```
-
-### 2. Adding New Storage Backends
-```clojure
-;; Implement Storage protocol
-(defrecord PostgreSQLStorage [ds]
-  Storage
-  (create-run! [this pipeline] ...)
-  (append-metric! [this run-id iter score payload] ...)
-  (load-run [this run-id] ...)
-  (load-history [this run-id] ...))
-
-;; Add to factory
-(defmethod make-storage :postgresql [config]
-  (->PostgreSQLStorage (:ds config)))
-```
-
-### 3. Adding New Optimization Strategies
-```clojure
-;; Implement strategy multimethod
-(defmethod compile-strategy :genetic [config]
-  (fn [pipeline training-data metric]
-    (genetic-algorithm pipeline training-data metric config)))
-```
+### Schema-Validated Configuration
+- **Configuration Schemas**: All config options validated at startup
+- **Clear Error Messages**: Helpful feedback for configuration errors
+- **Documentation**: Schema serves as configuration documentation
 
 ## Security Patterns
 
-### 1. API Key Management
-```clojure
-;; Environment-based secrets
-(def api-key (or (System/getenv "OPENAI_API_KEY")
-                 (System/getProperty "openai.api.key")))
-```
+### API Key Management
+- **Environment Variables**: Never hardcode API keys
+- **Runtime Injection**: Keys loaded only at application startup
+- **Graceful Fallback**: Mock keys for development/testing
 
-### 2. Input Validation
-```clojure
-;; Schema-based validation
-(defn validate-input [schema data]
-  (when-not (m/validate schema data)
-    (throw (ex-info "Invalid input" {:schema schema :data data}))))
-```
+### Safe Code Execution
+- **SCI Integration**: Small Clojure Interpreter for safe evaluation
+- **Namespace Control**: Limited namespace access for security
+- **Timeout Protection**: Execution time limits to prevent infinite loops
+- **Resource Limits**: Memory and computation constraints
 
-### 3. Resource Limits
-```clojure
-;; Configurable limits to prevent abuse
-(def max-concurrency (or (System/getenv "DSPY_MAX_CONCURRENCY") 10))
-(def max-iterations (or (System/getenv "DSPY_MAX_ITERATIONS") 100))
-```
+### Input Validation
+- **Schema Validation**: All inputs validated against schemas
+- **Sanitization**: Dangerous inputs rejected or cleaned
+- **Error Context**: Clear feedback without exposing internals
 
-## Monitoring Patterns
+## Performance Patterns
 
-### 1. Structured Logging
-```clojure
-;; Context-rich logging
-(log/info "Optimization iteration completed"
-          {:iteration iter
-           :score score
-           :candidates-count (count candidates)})
-```
+### Lazy Evaluation
+- **Deferred Computation**: Work only done when results needed
+- **Resource Conservation**: Minimal memory usage for large datasets
+- **Early Termination**: Stop processing when conditions met
 
-### 2. Performance Metrics
-```clojure
-;; Built-in timing and monitoring
-(defn timed [deferred]
-  (let [start (System/currentTimeMillis)]
-    (d/chain deferred
-             (fn [result]
-               {:result result
-                :elapsed-ms (- (System/currentTimeMillis) start)}))))
-```
+### Caching Strategies
+- **Result Memoization**: Cache expensive computation results
+- **TTL Support**: Time-based cache invalidation
+- **Memory Bounds**: Configurable cache size limits
 
-### 3. Health Checks
-```clojure
-;; System health monitoring
-(defn health-check []
-  {:status :healthy
-   :timestamp (System/currentTimeMillis)
-   :version "1.0.0"
-   :components {:backend (backend-health-check)
-                :storage (storage-health-check)}})
-```
+### Connection Pooling
+- **HTTP Client Reuse**: Shared connections for backend requests
+- **Connection Limits**: Bounded connection pools
+- **Timeout Management**: Proper connection timeout handling
 
 ## Deployment Patterns
 
-### 1. Configuration Management
-```clojure
-;; Environment-specific configuration
-(defn load-config []
-  (merge default-config
-         (when (= (System/getenv "ENV") "production")
-           production-config)
-         (when (= (System/getenv "ENV") "development")
-           development-config)))
-```
+### Uberjar Packaging
+- **Self-Contained Deployment**: Single JAR with all dependencies
+- **Configuration Externalization**: Runtime configuration via environment
+- **Health Checks**: Built-in endpoints for monitoring
 
-### 2. Resource Initialization
-```clojure
-;; Proper startup sequence
-(defn init-system! []
-  (init-logging!)
-  (init-storage!)
-  (init-backend!)
-  (init-portal!))
-```
+### Container-Ready
+- **Environment Configuration**: 12-factor app compliance
+- **Signal Handling**: Graceful shutdown on SIGTERM
+- **Resource Limits**: JVM tuning for container environments
 
-### 3. Graceful Shutdown
-```clojure
-;; Clean resource cleanup
-(defn shutdown-system! []
-  (shutdown-portal!)
-  (shutdown-backend!)
-  (shutdown-storage!)
-  (shutdown-logging!))
-```
+### Observability
+- **Structured Logging**: JSON logs for log aggregation
+- **Metrics Export**: JVM metrics for monitoring systems
+- **Distributed Tracing**: Request correlation across services
 
-## Summary
-
-The delic system follows **protocol-first, async-first, schema-driven** design principles with:
-
-- **Clean abstractions** through protocols and factory patterns
-- **Composable components** that work together seamlessly
-- **Provider-agnostic design** enabling easy extension
-- **Storage-agnostic persistence** with multiple backend options
-- **Enterprise-grade concurrency** with controlled resource usage
-- **Comprehensive error handling** with graceful degradation
-- **Extensive testing** with clear patterns and isolation
-- **Production-ready patterns** for deployment and monitoring
-
-This architecture provides a solid foundation for systematic LLM pipeline optimization while maintaining flexibility for future enhancements and different deployment scenarios.
+These patterns form the foundation of delic's architecture, enabling a robust, scalable, and maintainable LLM optimization framework that can grow with evolving requirements while maintaining clean abstractions and excellent developer experience.
